@@ -10,7 +10,6 @@ describe('sending to topics', () => {
         for(var i = 0; i < 1000; i++) {
             sender.send({ message: { body: JSON.stringify({ i, rnd: shortid() }) }})
         }
-        // console.log(result)
     }).timeout(30000)
 
 })

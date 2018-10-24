@@ -14,9 +14,9 @@ xdescribe('receiving from topic', () => {
                 },
                 onStop: resolve
             })
-            // setTimeout(()  => {
-            //     stop();
-            // }, 10000)
+            setTimeout(()  => {
+                stop();
+            }, 10000)
             return start();
         })
 
