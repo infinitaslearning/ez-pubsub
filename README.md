@@ -2,11 +2,11 @@
 
 Currently this is implemented over Service Bus - but the backing tech might change.
 
-### Send a message to a topic
+## Send a message to a topic
 
 
 ```javascript
-const { createTopicSender } = require('module-service-bus-client');
+const { createTopicSender } = require('module-messaging');
 
 const sender = createTopicSender({ topic: 'serial.indexed' });
 sender.send({ message: { body: JSON.stringify({ id: '42', name: 'noname')});
@@ -21,10 +21,11 @@ Connection string can be passed in or is taken from AZURE_SERVICEBUS_CONNECTION_
 const sender = createTopicSender({ connectionString: '{your_connection_string}' });
 ```
 
-### Start listening for messages on a subscription
-
+## Start listening for messages on a subscription
 
 ```javascript
+const { creatSubscriptionListener } = require('module-messaging');
+
 const { start, stop } = creatSubscriptionListener({
     topic: 'serial.indexed',
     subscription: 'page-cache-cleaner',
