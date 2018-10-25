@@ -31,8 +31,9 @@ const { start, stop } = creatSubscriptionListener({
     subscription: 'page-cache-cleaner',
     onMessage: (m) => console.log(m.body),
     onError: (error) => console.error('Error', error),
+    onStop: () => console.log('stopped')
 },
-onStop: resolve
+
 });
 
 start();
