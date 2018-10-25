@@ -17,7 +17,6 @@ const creatSubscriptionListener =  ({
     const sb = azureSb.createServiceBusService(connectionString);
     const receiveMessage = async () => new Promise((resolve, reject) => {
         sb.receiveSubscriptionMessage(topic, subscription, (error, result, response) => {
-            console.log('listener:', error);
             resolve({ 
                 result,
                 response,
