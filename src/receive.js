@@ -41,15 +41,12 @@ const creatSubscriptionListener =  ({
     
 
     const loop = async () => {
-        console.log('loop start')
         const { error, result, response } = await receiveMessage();
-        console.log('Rece');
         switch(true) {
             case error && error !== 'No messages to receive':
                 onError(error);
                 break;
             case error === 'No messages to receive':
-                console.log('Rece no messagees')
                 break; 
             default:
                 onMessage(result, response);
