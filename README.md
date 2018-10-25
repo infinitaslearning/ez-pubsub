@@ -6,7 +6,7 @@ Currently this is implemented over Service Bus - but the backing tech might chan
 
 
 ```javascript
-const { createTopicSender } = require('ez-pubsub');
+const { createTopicSender } = require('@liber/ez-pubsub');
 
 const sender = createTopicSender({ topic: 'serial.indexed' });
 sender.send({ message: { body: JSON.stringify({ id: '42', name: 'noname')});
@@ -24,7 +24,7 @@ const sender = createTopicSender({ connectionString: '{your_connection_string}' 
 ## Start listening for messages on a subscription
 
 ```javascript
-const { creatSubscriptionListener } = require('ez-pubsub');
+const { creatSubscriptionListener } = require('@liber/ez-pubsub');
 
 const { start, stop } = creatSubscriptionListener({
     topic: 'serial.indexed',
