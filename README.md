@@ -12,10 +12,19 @@ const sender = createTopicSender({ topic: 'serial.indexed' });
 sender.send({ message: { body: JSON.stringify({ id: '42', name: 'noname')});
 ```
 
-### Start listening for messages on a subscription
-```javascript
-const { creatSubscriptionListener } = require('module-service-bus-client');
+This autocreates the topic if it does not exist.
 
+Connection string can be passed in or is taken from AZURE_SERVICEBUS_CONNECTION_STRING env
+
+
+```javascript
+const sender = createTopicSender({ connectionString: '{your_connection_string}' });
+```
+
+### Start listening for messages on a subscription
+
+
+```javascript
 const { start, stop } = creatSubscriptionListener({
     topic: 'serial.indexed',
     subscription: 'page-cache-cleaner',
@@ -30,4 +39,7 @@ start();
 This autocreates both the topic and subscribtion if they dont exist.
 
 
-
+Connection string can be passed in or is taken from AZURE_SERVICEBUS_CONNECTION_STRING env
+```javascript
+const { start, stop } = creatSubscriptionListener({ connectionString: '{your_connection_string}' });
+```
