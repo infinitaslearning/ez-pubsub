@@ -1,4 +1,4 @@
-const { creatSubscriptionListener }= require('../src/receive');
+const { creatSubscriptionListener }= require('../');
 
 describe.only('receiving from topic', () => {
     it('can receive', async () => {
@@ -14,6 +14,7 @@ describe.only('receiving from topic', () => {
                 },
                 onStop: resolve
             })
+
             setTimeout(()  => {
                 stop();
             }, 10000)
