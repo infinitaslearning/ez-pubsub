@@ -1,5 +1,5 @@
 {
-  "name": "ez-pubsub",
+  "name": "@liber/ez-pubsub",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
