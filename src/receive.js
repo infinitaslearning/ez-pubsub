@@ -26,6 +26,21 @@ const creatSubscriptionListener =  ({
         })
     })
 
+    const isEntityExistsError = error => error.statusCode === 409
+
+    const ensureEnvironment = new Promise((resolve, reject) => {
+        sb.createTopicIfNotExists(topic, (error, result, response) => {
+            if (error) return reject(error);
+            sb.createSubscription(topic, subscription, (error, result, response) => {
+                if (error && !isEntityExistsError(error)) {
+                    return reject(error);
+                }
+                resolve(result);
+            })
+        })
+    });
+    
+
     const loop = async () => {
         console.log('loop start')
         const { error, result, response } = await receiveMessage();
@@ -46,7 +61,8 @@ const creatSubscriptionListener =  ({
         }
         setImmediate(loop);
     }
-    const start = () => {
+    const start = async () => {
+        await ensureEnvironment;
         running = true;
         loop();
     }

@@ -1,11 +1,11 @@
 const { creatSubscriptionListener }= require('../src/receive');
 
-xdescribe('receiving from topic', () => {
+describe.only('receiving from topic', () => {
     it('can receive', async () => {
         return new Promise( (resolve, reject) => {
             const { start, stop } = creatSubscriptionListener({
-                topic: 'serial.indexed',
-                subscription: 'AllMessages',
+                topic: 'klopotek-adapter.v1.notifications.series.digested',
+                subscription: 'search-indexer',
                 onMessage: (m) => {
                     console.log('Test subscriber', m.body);
                 },
