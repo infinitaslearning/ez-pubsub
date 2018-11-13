@@ -16,7 +16,7 @@ const creatSubscriptionListener =  ({
 
     const sb = azureSb.createServiceBusService(connectionString);
     const receiveMessage = async () => new Promise((resolve, reject) => {
-        sb.receiveSubscriptionMessage(topic, subscription, (error, result, response) => {
+        sb.receiveSubscriptionMessage(topic, subscription, { timeoutIntervalInS: 60 }, (error, result, response) => {
             resolve({ 
                 result,
                 response,
