@@ -7,8 +7,8 @@ describe('sending to topics', () => {
 
 
         const sends = []
-        for(var i = 0; i < 1000; i++) {
-            sender.send({ message: { body: JSON.stringify({ i, rnd: shortid() }) }})
+        for(var i = 0; i < 10; i++) {
+            await sender.send({ message: { body: JSON.stringify({ i, rnd: shortid() }) }})
         }
     }).timeout(30000)
 
