@@ -1,7 +1,6 @@
-const azureSb = require('azure-sb');
+const azure = require('azure-sb');
 
-
-
+const noop = async () => {}
 
 const creatSubscriptionListener =  ({ 
     connectionString = process.env.AZURE_SERVICEBUS_CONNECTION_STRING,
@@ -10,13 +9,17 @@ const creatSubscriptionListener =  ({
     onStop = () => {},
     onMessage = (message) => {},
     onError = (error) => {},
-    autocreate = false,
+    autoCreate = true,
+    defaultAck = false,
     running = false,
 }) => {
 
-    const sb = azureSb.createServiceBusService(connectionString);
+    const sb = azure.createServiceBusService(connectionString);
+
     const receiveMessage = async () => new Promise((resolve, reject) => {
-        sb.receiveSubscriptionMessage(topic, subscription, { timeoutIntervalInS: 60 }, (error, result, response) => {
+        sb.receiveSubscriptionMessage(topic, subscription, 
+            { isPeekLock: !defaultAck }, 
+            (error, result, response) => {
             resolve({ 
                 result,
                 response,
@@ -27,21 +30,39 @@ const creatSubscriptionListener =  ({
 
     const isEntityExistsError = error => error.statusCode === 409
 
-    const ensureEnvironment = new Promise((resolve, reject) => {
-        sb.createTopicIfNotExists(topic, (error, result, response) => {
-            if (error) return reject(error);
-            sb.createSubscription(topic, subscription, (error, result, response) => {
-                if (error && !isEntityExistsError(error)) {
-                    return reject(error);
-                }
-                resolve(result);
+    const ensureEnvironment = autoCreate 
+        ? new Promise((resolve, reject) => {
+            sb.createTopicIfNotExists(topic, (error, result, response) => {
+                if (error) return reject(error);
+                sb.createSubscription(topic, subscription, (error, result, response) => {
+                    if (error && !isEntityExistsError(error)) {
+                        return reject(error);
+                    }
+                    resolve(result);
+                })
             })
         })
-    });
+        : Promise.resolve()
     
 
     const loop = async () => {
         const { error, result, response } = await receiveMessage();
+        const ack = defaultAck
+            ? noop
+            : () => new Promise((resolve, reject) => {
+                sb.deleteMessage(result, (error, response) => {
+                    if (error) return reject(error);
+                    resolve(response)
+                })  
+            })
+        const abandon = defaultAck
+            ? noop
+            : () => new Promise( (resolve, reject) => {
+                sb.unlockMessage(result, (error, response) => {
+                    if (error) return reject(error);
+                    resolve(response)
+                })
+            })
         switch(true) {
             case error && error !== 'No messages to receive':
                 onError(error);
@@ -49,7 +70,7 @@ const creatSubscriptionListener =  ({
             case error === 'No messages to receive':
                 break; 
             default:
-                onMessage(result, response);
+                onMessage(result, response, { ack, abandon });
                 break;
         }
         if (!running) {
