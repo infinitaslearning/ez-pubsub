@@ -1,3 +1,4 @@
+const debug = require('debug')('pubsub:receive');
 const azure = require('azure-sb');
 
 const noop = async () => {};
@@ -15,40 +16,44 @@ const creatSubscriptionListener = ({
   let running = false;
   const sb = azure.createServiceBusService(connectionString);
 
-  const receiveMessage = async () => new Promise((resolve) => {
-    sb.receiveSubscriptionMessage(topic, subscription,
+  const receiveMessage = async () => new Promise((resolve, reject) => {
+    debug(`Receiving message in subscription ${subscription} for topic ${topic}`);
+    return sb.receiveSubscriptionMessage(
+      topic,
+      subscription,
       { isPeekLock: !defaultAck },
       (error, result, response) => {
-        resolve({
+        if (error) return reject(error);
+        return resolve({
           result,
           response,
-          error,
         });
-      });
+      },
+    );
   });
 
-  const isEntityExistsError = error => error.statusCode === 409;
+  const isEntityExistsError = ({ statusCode }) => statusCode === 409;
 
   const ensureEnvironment = autoCreate
     ? new Promise((resolve, reject) => {
+      debug(`Ensuring topic ${topic}...`);
       sb.createTopicIfNotExists(topic, (error) => {
         if (error) return reject(error);
+        debug('Creating subscription...');
         return sb.createSubscription(topic, subscription, (error2, result) => {
-          if (error2 && !isEntityExistsError(error)) {
-            return reject(error);
-          }
+          if (error2 && !isEntityExistsError(error2)) return reject(error2);
           return resolve(result);
         });
       });
     })
     : Promise.resolve();
 
-
   const loop = async () => {
     const { error, result, response } = await receiveMessage();
     const ack = defaultAck
       ? noop
       : () => new Promise((resolve, reject) => {
+        debug('Deleting received message...');
         sb.deleteMessage(result, (deleteError, deleteResponse) => {
           if (deleteError) return reject(deleteError);
           return resolve(deleteResponse);
@@ -57,6 +62,7 @@ const creatSubscriptionListener = ({
     const abandon = defaultAck
       ? noop
       : () => new Promise((resolve, reject) => {
+        debug('Unlocking message...');
         sb.unlockMessage(result, (unlockError, unlockResponse) => {
           if (unlockError) return reject(unlockError);
           return resolve(unlockResponse);
@@ -78,8 +84,10 @@ const creatSubscriptionListener = ({
     return setImmediate(loop);
   };
   const start = async () => {
+    debug('Ensuring environment...');
     await ensureEnvironment;
     running = true;
+    debug('Starting looping...');
     loop();
   };
 
@@ -92,7 +100,6 @@ const creatSubscriptionListener = ({
     stop,
   };
 };
-
 
 module.exports = {
   creatSubscriptionListener,

@@ -1,13 +1,11 @@
 {
-  "extends": "airbnb-base",
-  "parserOptions": {
-    "sourceType": "module",
-    "allowImportExportEverywhere": false
-  },
-  "env": {
-    "node": true,
-    "mocha": true
-  },
-  "rules": {
-  }
+	"extends": "airbnb-base",
+	"parserOptions": {
+		"sourceType": "module",
+		"allowImportExportEverywhere": false
+	},
+	"env": {
+		"node": true,
+		"mocha": true
+	}
 }
