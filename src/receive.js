@@ -10,7 +10,7 @@ const creatSubscriptionListener = ({
   onMessage = (message) => {}, // eslint-disable-line no-unused-vars
   onError = (error) => {}, // eslint-disable-line no-unused-vars
   autoCreate = true,
-  defaultAck = false,
+  defaultAck = true,
 }) => {
   let running = false;
   const sb = azure.createServiceBusService(connectionString);
