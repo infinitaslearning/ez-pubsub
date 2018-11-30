@@ -16,18 +16,14 @@ const creatSubscriptionListener = ({
   let running = false;
   const sb = azure.createServiceBusService(connectionString);
 
-  const receiveMessage = async () => new Promise((resolve, reject) => {
+  const receiveMessage = async () => new Promise((resolve) => {
     debug(`Receiving message in subscription ${subscription} for topic ${topic}`);
     return sb.receiveSubscriptionMessage(
       topic,
       subscription,
       { isPeekLock: !defaultAck },
       (error, result, response) => {
-        if (error) return reject(error);
-        return resolve({
-          result,
-          response,
-        });
+        return resolve({error, result, response})
       },
     );
   });
