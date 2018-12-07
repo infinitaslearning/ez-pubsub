@@ -8,13 +8,14 @@ const creatSubscriptionListener = ({
   topic,
   subscription,
   onStop = () => {},
-  onMessage = (message) => {}, // eslint-disable-line no-unused-vars
+  onMessage = async (message) => {}, // eslint-disable-line no-unused-vars
   onError = (error) => {}, // eslint-disable-line no-unused-vars
   autoCreate = true,
   defaultAck = true,
+  azureApi = azure,
 }) => {
   let running = false;
-  const sb = azure.createServiceBusService(connectionString);
+  const sb = azureApi.createServiceBusService(connectionString);
 
   const receiveMessage = async () => new Promise((resolve) => {
     debug(`Receiving message in subscription ${subscription} for topic ${topic}`);
@@ -22,13 +23,29 @@ const creatSubscriptionListener = ({
       topic,
       subscription,
       { isPeekLock: !defaultAck },
-      (error, result, response) => {
-        return resolve({error, result, response})
-      },
+      (error, result, response) => resolve({ error, result, response }),
     );
   });
 
   const isEntityExistsError = ({ statusCode }) => statusCode === 409;
+  const isNoMessagesError = error => error === 'No messages to receive';
+
+
+  const acknowledgeMessage = message => () => new Promise((resolve, reject) => {
+    debug('Deleting received message...');
+    sb.deleteMessage(message, (deleteError, deleteResponse) => {
+      if (deleteError) return reject(deleteError);
+      return resolve(deleteResponse);
+    });
+  });
+
+  const abandonMessage = message => () => new Promise((resolve, reject) => {
+    debug('Unlocking message...');
+    sb.unlockMessage(message, (unlockError, unlockResponse) => {
+      if (unlockError) return reject(unlockError);
+      return resolve(unlockResponse);
+    });
+  });
 
   const ensureEnvironment = autoCreate
     ? new Promise((resolve, reject) => {
@@ -45,40 +62,25 @@ const creatSubscriptionListener = ({
     : Promise.resolve();
 
   const loop = async () => {
-    const { error, result, response } = await receiveMessage();
-    const ack = defaultAck
-      ? noop
-      : () => new Promise((resolve, reject) => {
-        debug('Deleting received message...');
-        sb.deleteMessage(result, (deleteError, deleteResponse) => {
-          if (deleteError) return reject(deleteError);
-          return resolve(deleteResponse);
-        });
-      });
-    const abandon = defaultAck
-      ? noop
-      : () => new Promise((resolve, reject) => {
-        debug('Unlocking message...');
-        sb.unlockMessage(result, (unlockError, unlockResponse) => {
-          if (unlockError) return reject(unlockError);
-          return resolve(unlockResponse);
-        });
-      });
-    switch (true) {
-      case error && error !== 'No messages to receive':
-        onError(error);
-        break;
-      case error === 'No messages to receive':
-        break;
-      default:
-        onMessage(result, response, { ack, abandon });
-        break;
-    }
     if (!running) {
       return onStop();
     }
+
+    const { error, result, response } = await receiveMessage();
+
+    if (error) {
+      if (!isNoMessagesError(error)) {
+        onError(error);
+      }
+      return setImmediate(loop);
+    }
+
+    const ack = defaultAck ? noop : acknowledgeMessage(result);
+    const abandon = defaultAck ? noop : abandonMessage(result);
+    await onMessage(result, response, { ack, abandon });
     return setImmediate(loop);
   };
+
   const start = async () => {
     debug('Ensuring environment...');
     await ensureEnvironment;
