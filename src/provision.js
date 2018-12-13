@@ -21,23 +21,23 @@ const ensureSubscriptionExists = (topic, subscription, options, connectionInfo) 
     debug(`Creating subscription ${subscription} for topic ${topic}`);
     return sb.createSubscription(topic, subscription, options, (error, result, response) => {
       // TODO check on errorStatus === 409 so its just a duplicate - and no error
-      if (error) return reject(error);
+      if (error && error.statusCode != 409) return reject(error);
       return resolve({ result, response, error });
     });
   });
 };
 
-const getTopic = topic => new Promise((resolve, reject) => {
+const getTopic = (topic, connectionInfo) => new Promise((resolve, reject) => {
   debug(`Getting topic info for ${topic}`);
-  getSb().getTopic(topic, (error, result) => {
+  getSb(connectionInfo).getTopic(topic, (error, result) => {
     if (error) return reject(error);
     return resolve(result);
   });
 });
 
-const getSubscription = (topic, subscription) => new Promise((resolve, reject) => {
+const getSubscription = (topic, subscription,connectionInfo) => new Promise((resolve, reject) => {
   debug(`Getting subscription ${subscription} for topic ${topic}`);
-  getSb().getSubscription(topic, subscription, (error, result) => {
+  getSb(connectionInfo).getSubscription(topic, subscription, (error, result) => {
     if (error) return reject(error);
     return resolve(result);
   });
