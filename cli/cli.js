@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-const connectionInfo = 'Endpoint=sb://il-webshops-development.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=YIqQXxjeanoiED3nRw+Bgyg33RvZaplehuA//BYEvCs=';
+
+const config = require('dotenv').load();
+
+
+const connectionInfo = process.env.AZURE_SERVICEBUS_CONNECTION_STRING;
 const fs = require('fs');
 const { ensureTopicExists, getTopic, ensureSubscriptionExists , getSubscription} = require('../src/provision');
 
