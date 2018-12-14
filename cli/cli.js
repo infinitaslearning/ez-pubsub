@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-const config = require('dotenv').load();
+require('dotenv').load();
 
 
 const connectionInfo = process.env.AZURE_SERVICEBUS_CONNECTION_STRING;
 const fs = require('fs');
-const { ensureTopicExists, getTopic, ensureSubscriptionExists , getSubscription} = require('../src/provision');
+const { ensureTopicExists, getTopic, ensureSubscriptionExists, getSubscription } = require('../src/provision');
 
 let configFile = process.cwd();
 const params = process.argv.slice(2);
@@ -28,8 +28,6 @@ const createTopics = (topics, topicTemplate) => {
   return Promise.all(topicPromis)
     .then(async (data) => {
       console.log('Success created topic(s)')
-
-      //ensureSubscriptionExists('np-test', 'LocalDevelopment', null, connectionInfo)
     })
     .catch((error) => {
       console.error('Topic(s) create faild.')
@@ -43,25 +41,22 @@ const createSubscription = (subscriptions, subscriptionTemplate) => {
     .map(_ => ({ name: _, topics: subscriptions[_].topics.filter(topicFilter), config: { ...subscriptionTemplate, ...subscriptions[_], topics: undefined } }))
     .map(_ => _.topics.map((t) => ({ ..._, topic: t, topics: undefined })))
   )
-  //console.log(subscriptionNameList)
   return Promise.all(subscriptionNameList.map(_ => ensureSubscriptionExists(_.topic, _.name, _.config, connectionInfo)))
 }
 
-if (config && config.serviceBus) {
-  createTopics(config.serviceBus.topics, config.serviceBus.topicCreate_Template)
-    .then(async () => {
-      try {
-        await createSubscription(config.serviceBus.subscriptions, config.serviceBus.subscriptionCreate_Template)
-        console.log('Subscriptions done')
-      }
-      catch (e) {
-        console.error(e)
-      }
-    })
-    .catch((err) => {
-      console.error('Error at creating topics', err)
-    })
+const setupServiceBus = async () => {
+  try {
+    await createTopics(config.serviceBus.topics, config.serviceBus.topicCreate_Template);
+    console.log('Success setup Topics')
+    await createSubscription(config.serviceBus.subscriptions, config.serviceBus.subscriptionCreate_Template)
+    console.log('Success setup Subscriptions')
+  } catch (error) {
+    console.error('Faild setup Azure Service Bus', error)
+  }
+}
 
+if (config && config.serviceBus) {
+  setupServiceBus()
 }
 else {
   console.error('invalid config file')
