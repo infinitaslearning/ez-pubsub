@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
 require('dotenv').load();
-
-
-const connectionInfo = process.env.AZURE_SERVICEBUS_CONNECTION_STRING;
 const fs = require('fs');
 const { ensureTopicExists, getTopic, ensureSubscriptionExists, getSubscription } = require('../src/provision');
 
+const connectionInfo = process.env.AZURE_SERVICEBUS_CONNECTION_STRING;
 let configFile = process.cwd();
 const params = process.argv.slice(2);
 
@@ -15,7 +13,7 @@ if (params.length > 0) {
 }
 if (params.length > 1) return console.log('to many parameters')
 const tag = params.pop()
-console.log('consfigFile: ', configFile, tag);
+console.log(`consfigFile: ${configFile}, tag: ${tag}`);
 const config = require(configFile)
 
 const topicFilter = _ => !tag || (tag && _ === tag)
@@ -37,11 +35,14 @@ const createTopics = (topics, topicTemplate) => {
 
 const createSubscription = (subscriptions, subscriptionTemplate) => {
   const subscriptionNameList = [].concat(...Object.keys(subscriptions)
-    .filter(_ => !tag || (tag && subscriptions[_].topics.indexOf(tag) >= 0))
-    .map(_ => ({ name: _, topics: subscriptions[_].topics.filter(topicFilter), config: { ...subscriptionTemplate, ...subscriptions[_], topics: undefined } }))
-    .map(_ => _.topics.map((t) => ({ ..._, topic: t, topics: undefined })))
+    .filter(_ => !tag || (tag && subscriptions[_].topic !== tag))  // filter subscription by topic tag if tag exists
+    .map(_ => ({
+      name: _,
+      topic: subscriptions[_].topic,
+      config: { ...subscriptionTemplate, ...subscriptions[_], topic: undefined }
+    })) //prepare subscription obejct
   )
-  return Promise.all(subscriptionNameList.map(_ => ensureSubscriptionExists(_.topic, _.name, _.config, connectionInfo)))
+  return Promise.all(subscriptionNameList.map(_ => {return ensureSubscriptionExists(_.topic, _.name, _.config, connectionInfo)}))
 }
 
 const setupServiceBus = async () => {
