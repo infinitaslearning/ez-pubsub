@@ -5,6 +5,7 @@ const fs = require('fs');
 const { ensureTopicExists, getTopic, ensureSubscriptionExists, getSubscription } = require('../src/provision');
 
 const connectionInfo = process.env.AZURE_SERVICEBUS_CONNECTION_STRING;
+const envName = process.env.LIBER_ENV || 'development';
 let configFile = process.cwd();
 const params = process.argv.slice(2);
 
@@ -20,7 +21,7 @@ const topicFilter = _ => !tag || (tag && _ === tag)
 const createTopics = (topics, topicTemplate) => {
   const topicNameList = Object.keys(topics)
     .filter(topicFilter)
-    .map(_ => ({ name: _, config: { ...topicTemplate, ...topics[_] } }))
+    .map(_ => ({ name: _.replace('${LIBER_ENV}', envName), config: { ...topicTemplate, ...topics[_] } }))
 
   const topicPromis = topicNameList.map(_ => ensureTopicExists(_.name, _.config, connectionInfo))
   return Promise.all(topicPromis)
@@ -37,8 +38,8 @@ const createSubscription = (subscriptions, subscriptionTemplate) => {
   const subscriptionNameList = [].concat(...Object.keys(subscriptions)
     .filter(_ => !tag || (tag && subscriptions[_].topic !== tag))  // filter subscription by topic tag if tag exists
     .map(_ => ({
-      name: _,
-      topic: subscriptions[_].topic,
+      name: _.replace('${LIBER_ENV}', envName),
+      topic: subscriptions[_].topic.replace('${LIBER_ENV}', envName),
       config: { ...subscriptionTemplate, ...subscriptions[_], topic: undefined }
     })) //prepare subscription obejct
   )
