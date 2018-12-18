@@ -3,7 +3,9 @@
 	"version": "1.0.0",
 	"description": "",
 	"main": "index.js",
-	"bin": "./cli/cli.js",
+	"bin": {
+		"ez-pubsub": "./cli/cli.js"
+	},
 	"scripts": {
 		"test": "mocha --reporter spec './test/**/*.test.js'"
 	},
