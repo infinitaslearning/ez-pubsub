@@ -10,7 +10,7 @@ const creatSubscriptionListener = ({
   onStop = () => {},
   onMessage = async (message) => {}, // eslint-disable-line no-unused-vars
   onError = (error) => {}, // eslint-disable-line no-unused-vars
-  autoCreate = true,
+  autoCreate = false,
   defaultAck = true,
   azureApi = azure,
 }) => {

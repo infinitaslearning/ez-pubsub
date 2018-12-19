@@ -3,7 +3,7 @@ const { createTopicSender } = require('../src/send');
 
 describe('sending to topics', () => {
   it('can send', async () => {
-    const sender = createTopicSender({ topic: 'serial.indexed' });
+    const sender = createTopicSender({ topic: 'serial.indexed', autoCreate: true });
 
     for (let i = 0; i < 10; i++) {
       await sender.send({ message: { body: JSON.stringify({ i, rnd: shortid() }) } });
