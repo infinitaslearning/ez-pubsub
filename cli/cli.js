@@ -2,7 +2,7 @@
 
 require('dotenv').load();
 const fs = require('fs');
-const { ensureTopicExists, getTopic, ensureSubscriptionExists, getSubscription } = require('../src/provision');
+const { ensureTopicExists, ensureSubscriptionExists } = require('../src/provision');
 
 const connectionInfo = process.env.AZURE_SERVICEBUS_CONNECTION_STRING;
 const envName = process.env.LIBER_ENV || 'development';
