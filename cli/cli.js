@@ -12,50 +12,53 @@ const params = process.argv.slice(2);
 if (params.length > 0) {
 	configFile = (fs.existsSync(params[0]) && fs.realpathSync(params.shift())) || process.cwd();
 }
-if (params.length > 1) return console.log('to many parameters');
+if (params.length > 1) return console.log('too many parameters');
 const tag = params.pop();
-console.log(`consfigFile: ${configFile}, tag: ${tag}`);
+console.log(`configFile: ${configFile}, tag: ${tag}`);
 const config = require(configFile);
+const topicFilter = topic => !tag || (tag && topic === tag);
 
 const createTopics = (topics, topicTemplate) => {
-	const topicFilter = topic => !tag || (tag && topic === tag);
 	const topicNameList = Object.keys(topics)
 		.filter(topicFilter)
-		.map(topic => ({ name: topic.replace('${LIBER_ENV}', envName), config: { ...topicTemplate, ...topics[topic] } }));
+		.map(topic => ({
+			name: topic.replace('${LIBER_ENV}', envName),
+			config: { ...topicTemplate, ...topics[topic].config },
+		}));
 
-	const topicPromise = topicNameList.map(topic => ensureTopicExists(topic.name, topic.config, connectionInfo));
-	return Promise.all(topicPromise)
-		.then(() => {
-			console.log('Topic(s) creation was a success');
-		})
-		.catch(error => {
-			console.error('Topic(s) creation failed.');
-			console.error(error);
-		});
+	const topicsPromises = topicNameList.map(topic => ensureTopicExists(topic.name, topic.config, connectionInfo));
+	return Promise.all(topicsPromises);
 };
 
-const createSubscription = (subscriptions, subscriptionTemplate) => {
-	const subscriptionFilter = subscription => !tag || (tag && subscriptions[subscription].topic !== tag);
-	const subscriptionNameList = Object.keys(subscriptions || {})
-		.filter(subscriptionFilter) // filter subscription by topic tag if tag exists
-		.map(subscription => ({
-			name: subscription.replace('${LIBER_ENV}', envName),
-			topic: subscriptions[subscription].topic.replace('${LIBER_ENV}', envName),
-			config: { ...subscriptionTemplate, ...subscriptions[subscription], topic: undefined },
-		})); //prepare subscription obejct
+const createSubscription = (topics, subscriptionTemplate) => {
+	const subscriptionMap = ({ name, config, topic }) => ({
+		name,
+		topic: topic.replace('${LIBER_ENV}', envName),
+		config: { ...subscriptionTemplate, ...config, topic: undefined },
+	});
 
-	return Promise.all(
-		subscriptionNameList.map(subscription => {
-			return ensureSubscriptionExists(subscription.topic, subscription.name, subscription.config, connectionInfo);
-		}),
+	const subscriptionNameList = Object.keys(topics || {})
+		.filter(topicFilter)
+		.reduce((subscriptions, topic) => {
+			return subscriptions.concat(
+				...Object.keys(topics[topic].subscriptions).map(subscription =>
+					subscriptionMap({ name: subscription, config: topics[topic][subscription], topic }),
+				),
+			);
+		}, []);
+
+	const subscriptionsPromises = subscriptionNameList.map(subscription =>
+		ensureSubscriptionExists(subscription.topic, subscription.name, subscription.config, connectionInfo),
 	);
+
+	return Promise.all(subscriptionsPromises);
 };
 
 const setupServiceBus = async () => {
 	try {
 		await createTopics(config.serviceBus.topics, config.serviceBus.topicCreate_Template);
 		console.log('Success setting up Topics');
-		await createSubscription(config.serviceBus.subscriptions, config.serviceBus.subscriptionCreate_Template);
+		await createSubscription(config.serviceBus.topics, config.serviceBus.subscriptionCreate_Template);
 		console.log('Success setting up Subscriptions');
 	} catch (error) {
 		console.error('Failed setting up Azure Service Bus', error);
