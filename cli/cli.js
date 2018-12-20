@@ -41,7 +41,7 @@ const createSubscription = (topics, subscriptionTemplate) => {
 		.filter(topicFilter)
 		.reduce((subscriptions, topic) => {
 			return subscriptions.concat(
-				...Object.keys(topics[topic].subscriptions).map(subscription =>
+				...Object.keys(topics[topic].subscriptions || {}).map(subscription =>
 					subscriptionMap({ name: subscription, config: topics[topic][subscription], topic }),
 				),
 			);
