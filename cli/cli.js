@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* eslint-disable */
+
 require('dotenv').load();
 const fs = require('fs');
 const { ensureTopicExists, ensureSubscriptionExists } = require('../src/provision');
@@ -12,7 +14,9 @@ const params = process.argv.slice(2);
 if (params.length > 0) {
 	configFile = (fs.existsSync(params[0]) && fs.realpathSync(params.shift())) || process.cwd();
 }
-if (params.length > 1) return console.log('too many parameters');
+if (params.length > 1) {
+	throw new Error('too many parameters');
+}
 const tag = params.pop();
 console.log(`configFile: ${configFile}, tag: ${tag}`);
 const config = require(configFile);

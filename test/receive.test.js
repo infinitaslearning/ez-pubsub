@@ -1,7 +1,7 @@
 const { creatSubscriptionListener } = require('../');
 
 describe('receiving from topic', () => {
-  it('can receive', async () => new Promise((resolve, reject) => {
+  it('can receive', async () => new Promise((resolve) => {
     const { start, stop } = creatSubscriptionListener({
       topic: 'serial.indexed',
       subscription: 'AllMessages',
